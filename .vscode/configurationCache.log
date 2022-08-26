@@ -1,0 +1,1 @@
+{"buildTargets":["all","buf-install","clean","format","gen","lint"],"launchTargets":[],"customConfigurationProvider":{"workspaceBrowse":{"browsePath":[],"compilerArgs":[]},"fileIndex":[]}}
