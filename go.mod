@@ -1,4 +1,4 @@
-module github.com/theartofdevel/grpc-service
+module github.com/MorselShogiew/UsersManager
 
 go 1.18
 
@@ -10,6 +10,8 @@ require (
 )
 
 require (
+	github.com/avast/retry-go v3.0.0+incompatible // indirect
+	github.com/go-redis/redis v6.15.9+incompatible // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
 	golang.org/x/sys v0.0.0-20220610221304-9f5ed59c137d // indirect

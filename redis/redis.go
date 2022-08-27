@@ -1,4 +1,4 @@
-package main
+package redis
 
 import (
 	"bytes"
@@ -57,7 +57,7 @@ func (m *RedisManager) Connect(conf *RedisConfig) {
 }
 
 func (m *RedisManager) getUsersFromRedis() (*[]StoredUser, bool) {
-	fromRedis, err := m.client.Get(redisUsersKey).Bytes()
+	fromRedis, err := m.client.Get(consts.redisUsersKey).Bytes()
 	if err == nil {
 		buf := bytes.NewBuffer([]byte(fromRedis))
 		dec := gob.NewDecoder(buf)
@@ -78,7 +78,7 @@ func (m *RedisManager) storeUsersIntoRedis(users *[]StoredUser) {
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(forRedis)
 	if err == nil {
-		err = m.client.Set(redisUsersKey, buf.Bytes(), time.Minute).Err()
+		err = m.client.Set(consts.redisUsersKey, buf.Bytes(), time.Minute).Err()
 		if err != nil {
 			log.Printf("Error: storing users into Redis: %s", err)
 		}
