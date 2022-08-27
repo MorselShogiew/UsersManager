@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package grpc_psql_example.proto.user;
 
-option go_package = "github.com/exsmund/grpc-psql-example/proto/user";
+option go_package = "github.com/MorselShogiew/UsersManager/proto/user";
 
 service UserRepo {
   rpc SaveUser(SaveUserRequest) returns (SaveUserResponse) {}
