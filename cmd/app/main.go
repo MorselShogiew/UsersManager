@@ -1,53 +1,71 @@
 package main
 
 import (
-	"context"
+	"fmt"
+	"log"
 	"net"
-	"net/http"
+	"sync"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	protoUserService "github.com/theartofdevel/grpc-contracts/gen/go/user_service/service/v1"
-	v1 "github.com/theartofdevel/grpc-service/internal/controller/grpc/v1"
-	"golang.org/x/sync/errgroup"
+	"github.com/MorselShogiew/UsersManager/packages/color"
+	pb "github.com/MorselShogiew/UsersManager/proto/user"
+	"github.com/MorselShogiew/UsersManager/repos"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-)
-
-const (
-	grpcHostPort = "0.0.0.0:8082"
 )
 
 func main() {
+	conf := NewConfig()
+	var wg sync.WaitGroup
+
+	db := &DBManager{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		db.Connect(&conf.psql)
+	}()
+
+	kafka := &KafkaProducer{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		kafka.Connect(&conf.kafka)
+	}()
+
+	redis := &RedisManager{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		redis.Connect(&conf.redis)
+	}()
+
+	wg.Wait()
+
+	if db.ok {
+		log.Println("Connection to the DB: " + color.Green + "done" + color.Reset)
+		defer db.Close()
+	} else {
+		log.Fatalf(color.Red+"ERROR"+color.Reset+": Failed DB connection (%s:%d)", conf.psql.host, conf.psql.port)
+	}
+
+	if kafka.ok {
+		log.Println("Connection to the Kafka: " + color.Green + "done" + color.Reset)
+		defer kafka.Close()
+	} else {
+		log.Fatalf(color.Red+"ERROR"+color.Reset+": Failed Kafka connection (%s)", conf.kafka.server)
+	}
+
+	if redis.ok {
+		log.Println("Connection to the Redis: " + color.Green + "done" + color.Reset)
+		defer redis.Close()
+	} else {
+		log.Fatalf(color.Red+"ERROR"+color.Reset+": Failed Redis connection (%s)", conf.redis.address)
+	}
+
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", conf.grpc.port))
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
 	grpcServer := grpc.NewServer()
-	listen, err := net.Listen("tcp", grpcHostPort)
-	if err != nil {
-		panic(err)
-	}
-
-	protoUserService.RegisterUserServiceServer(
-		grpcServer,
-		v1.NewUserServer(protoUserService.UnimplementedUserServiceServer{}),
-	)
-
-	mux := runtime.NewServeMux()
-
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-
-	err = protoUserService.RegisterUserServiceHandlerFromEndpoint(context.Background(), mux, grpcHostPort, opts)
-	if err != nil {
-		panic(err)
-	}
-
-	g, _ := errgroup.WithContext(context.Background())
-	g.Go(func() (err error) {
-		return grpcServer.Serve(listen)
-	})
-	g.Go(func() (err error) {
-		return http.ListenAndServe(":8081", mux)
-	})
-
-	err = g.Wait()
-	if err != nil {
-		panic(err)
-	}
+	pb.RegisterUserRepoServer(grpcServer, repos.NewUserDB(db, redis, kafka))
+	log.Printf("Start gRPC server %s", lis.Addr().String())
+	grpcServer.Serve(lis)
 }

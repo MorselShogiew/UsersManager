@@ -1,19 +1,15 @@
 package usecases
 
 import (
-	"git.wildberries.ru/branch-office/go-services/portal-api/logger"
-	"git.wildberries.ru/branch-office/go-services/portal-api/repos"
+	"github.com/MorselShogiew/UsersManager/repos"
 )
 
 type UserService struct {
 	userDBRepo repos.UserDBRepo
-
-	l logger.Logger
 }
 
-func New(r *repos.Repositories, l logger.Logger) *UserService {
+func New(r *repos.Repositories) *UserService {
 	return &UserService{
 		r.UserDBRepo,
-		l,
 	}
 }

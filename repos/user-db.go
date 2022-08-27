@@ -5,22 +5,21 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/jmoiron/sqlx"
+	pb "github.com/MorselShogiew/UsersManager/proto/user"
 )
 
 type UserDBRepo interface {
-	CreateUser(reqID string, args []interface{}) error
-	DeleteUser(reqID string, data models.RubilnikDB) error
-	GetUsers(reqID string) ([]models.RubilnikDB, error)
+	SaveUser(ctx context.Context, req *pb.SaveUserRequest) (*pb.SaveUserResponse, error)
+	DeleteUser(rctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error)
+	GetUsers(req *pb.GetUsersRequest, stream pb.UserRepo_GetUsersServer) error
 }
 
 type userDB struct {
-	db *sqlx.DB
-	logger.Logger
-}
-
-func NewUserDBRepo(p provider.Provider, l logger.Logger) UserDBRepo {
-	return &userDB{p.GetBODBConn(), l}
+	pb.UnimplementedUserRepoServer
+	db    *DBManager
+	redis *RedisManager
+	p     *KafkaProducer
+	ctx   context.Context
 }
 
 func (s *userDB) SaveUser(ctx context.Context, req *pb.SaveUserRequest) (*pb.SaveUserResponse, error) {
@@ -44,7 +43,7 @@ func (s *userDB) SaveUser(ctx context.Context, req *pb.SaveUserRequest) (*pb.Sav
 	return &pb.SaveUserResponse{Status: pb.Status_Success, Data: user}, nil
 }
 
-func (s *userServer) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
+func (s *userDB) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
 	id := req.GetId()
 	if id <= 0 {
 		return &pb.DeleteUserResponse{Status: pb.Status_RequestError}, nil
@@ -67,39 +66,12 @@ func (s *userServer) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) 
 	return &pb.DeleteUserResponse{Status: pb.Status_NothinToDo}, nil
 }
 
-func (s *userServer) GetUsers(req *pb.GetUsersRequest, stream pb.UserRepo_GetUsersServer) error {
-	redisUsers, ok := s.redis.getUsersFromRedis()
-	if ok {
-		log.Print("Retrieve users from Redis")
-		for _, u := range *redisUsers {
-			stream.Send(&pb.User{Id: u.Id, Name: u.Name, Email: u.Email})
-		}
-		return nil
+func NewUserDB(db *DBManager, redis *RedisManager, p *KafkaProducer) *userServer {
+	s := &userDB{
+		db:    db,
+		redis: redis,
+		p:     p,
+		ctx:   context.Background(),
 	}
-
-	log.Print("Retrieve users from DB")
-	rows, err := s.db.db.Query("SELECT id, email, name FROM users")
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	// Loop through rows, using Scan to assign column data to struct fields.
-	var users []StoredUser
-	for rows.Next() {
-		u := &pb.User{}
-		if err := rows.Scan(&u.Id, &u.Email, &u.Name); err != nil {
-			return fmt.Errorf("Failed while scaning row: %s", err)
-		}
-		users = append(users, StoredUser{Id: u.Id, Email: u.Email, Name: u.Name})
-		stream.Send(u)
-	}
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("Failed getting users: %s", err)
-	}
-
-	log.Print("Store to Redis")
-	s.redis.storeUsersIntoRedis(&users)
-
-	return nil
+	return s
 }
