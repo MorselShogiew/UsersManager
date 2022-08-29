@@ -1,0 +1,65 @@
+version: '3.7'
+services:
+  postgres:
+    image: postgres:14.2
+    container_name: postgres
+    restart: always
+    volumes:
+      # initdb.sh creates users table
+      - ./docker/psql/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh
+    ports:
+      - "5432:5432"
+    logging:
+      driver: none
+    environment:
+       POSTGRES_PASSWORD: example
+       POSTGRES_DB: example
+
+  server:
+    build:
+      context: ./
+      dockerfile: ./services/server/Dockerfile
+    container_name: server
+    depends_on:
+      - kafka
+      - postgres
+      - redis
+    ports:
+      - "8001:8001"
+    # The server service accepts parameters through the environment
+    environment:
+      APP_POSTGRES_HOST: postgres
+      APP_REDIS_ADDRESS: redis:6379
+      APP_KAFKA_SERVER: kafka:9092
+
+  logger:
+    build:
+      context: ./
+      dockerfile: ./services/logger/Dockerfile
+    container_name: logger
+    depends_on:
+      - clickhouse
+      - kafka
+    ports:
+      - "8002:8002"
+    # The logger service accepts parameters through the command-line flags
+    command:
+      - --kafkaserver
+      - kafka:9092
+      - --chaddr
+      - clickhouse:9000
+
+  client:
+    build:
+      context: ./
+      dockerfile: ./services/client/Dockerfile
+    container_name: client
+    depends_on:
+      - server
+      - logger
+    # The client service accepts parameters through the command-line flags
+    command:
+      - --serveraddr
+      - server:8001
+      - --loggeraddr
+      - logger:8002
