@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/MorselShogiew/UsersManager/config"
+	"github.com/MorselShogiew/UsersManager/consts"
 	"github.com/avast/retry-go"
 	"github.com/go-redis/redis"
 )
 
 type RedisManager struct {
-	ok     bool
+	Ok     bool
 	client *redis.Client
 }
 
@@ -32,13 +33,13 @@ func (m *RedisManager) Connect(conf *config.RedisConfig) {
 		if err != nil {
 			m.client.Close()
 		}
-		m.ok = err == nil
+		m.Ok = err == nil
 	}()
 
 	client := redis.NewClient(&redis.Options{
-		Addr:     conf.address,
-		Password: conf.password,
-		DB:       conf.db,
+		Addr:     conf.Address,
+		Password: conf.Password,
+		DB:       conf.DB,
 	})
 
 	err = retry.Do(
@@ -57,8 +58,8 @@ func (m *RedisManager) Connect(conf *config.RedisConfig) {
 	m.client = client
 }
 
-func (m *RedisManager) getUsersFromRedis() (*[]StoredUser, bool) {
-	fromRedis, err := m.client.Get(consts.redisUsersKey).Bytes()
+func (m *RedisManager) GetUsersFromRedis() (*[]StoredUser, bool) {
+	fromRedis, err := m.client.Get(consts.RedisUsersKey).Bytes()
 	if err == nil {
 		buf := bytes.NewBuffer([]byte(fromRedis))
 		dec := gob.NewDecoder(buf)
@@ -73,13 +74,13 @@ func (m *RedisManager) getUsersFromRedis() (*[]StoredUser, bool) {
 	return nil, false
 }
 
-func (m *RedisManager) storeUsersIntoRedis(users *[]StoredUser) {
+func (m *RedisManager) StoreUsersIntoRedis(users *[]StoredUser) {
 	forRedis := &StoredUsers{Users: *users}
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(forRedis)
 	if err == nil {
-		err = m.client.Set(consts.redisUsersKey, buf.Bytes(), time.Minute).Err()
+		err = m.client.Set(consts.RedisUsersKey, buf.Bytes(), time.Minute).Err()
 		if err != nil {
 			log.Printf("Error: storing users into Redis: %s", err)
 		}

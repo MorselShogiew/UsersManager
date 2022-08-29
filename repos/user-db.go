@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/MorselShogiew/UsersManager/cmd/app"
 	pb "github.com/MorselShogiew/UsersManager/proto/user"
 	"github.com/MorselShogiew/UsersManager/redis"
 )
@@ -20,7 +19,7 @@ type userDB struct {
 	pb.UnimplementedUserRepoServer
 	db    *DBManager
 	redis *redis.RedisManager
-	p     *app.KafkaProducer
+	p     *KafkaProducer
 	ctx   context.Context
 }
 
@@ -69,7 +68,7 @@ func (s *userDB) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb
 }
 
 func (s *userDB) GetUsers(req *pb.GetUsersRequest, stream pb.UserRepo_GetUsersServer) error {
-	redisUsers, ok := s.redis.getUsersFromRedis()
+	redisUsers, ok := s.redis.GetUsersFromRedis()
 	if ok {
 		log.Print("Retrieve users from Redis")
 		for _, u := range *redisUsers {
@@ -100,12 +99,12 @@ func (s *userDB) GetUsers(req *pb.GetUsersRequest, stream pb.UserRepo_GetUsersSe
 	}
 
 	log.Print("Store to Redis")
-	s.redis.storeUsersIntoRedis(&users)
+	s.redis.StoreUsersIntoRedis(&users)
 
 	return nil
 }
 
-func NewUserDB(db *DBManager, redis *redis.RedisManager, p *app.KafkaProducer) *userDB {
+func NewUserDB(db *DBManager, redis *redis.RedisManager, p *KafkaProducer) *userDB {
 	s := &userDB{
 		db:    db,
 		redis: redis,

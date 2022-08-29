@@ -1,4 +1,4 @@
-package main
+package repos
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 )
 
 type KafkaProducer struct {
-	ok    bool
+	Ok    bool
 	p     *kafka.Producer
 	topic string
 	flush int
@@ -20,14 +20,14 @@ func (k *KafkaProducer) Connect(conf *config.KafkaConfig) {
 	// log.Printf("create kafka produser with server %s and topic %s", conf.server, conf.topic)
 	var err error
 	defer func() {
-		k.ok = err == nil
+		k.Ok = err == nil
 	}()
 
-	k.topic = conf.topic
+	k.topic = conf.Topic
 	k.flush = 1000
 
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": conf.server,
+		"bootstrap.servers": conf.Server,
 		"acks":              0, //  The producer will not wait for any acknowledgment from the server at all
 	})
 	if err != nil {
@@ -35,7 +35,7 @@ func (k *KafkaProducer) Connect(conf *config.KafkaConfig) {
 	}
 	k.p = p
 
-	err = k.createTopic(conf.topic)
+	err = k.createTopic(conf.Topic)
 	// go m.deliveryHandler()
 }
 

@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"os"
@@ -6,56 +6,56 @@ import (
 )
 
 type GRPCConfig struct {
-	port int
+	Port int
 }
 
 type PostgresConfig struct {
-	port     int
-	host     string
-	db       string
-	username string
-	password string
+	Port     int
+	Host     string
+	DB       string
+	Username string
+	Password string
 }
 
 type RedisConfig struct {
-	address  string
-	password string
-	db       int
+	Address  string
+	Password string
+	DB       int
 }
 
 type KafkaConfig struct {
-	server string
-	topic  string
+	Server string
+	Topic  string
 }
 
 type Config struct {
-	psql  PostgresConfig
-	grpc  GRPCConfig
-	redis RedisConfig
-	kafka KafkaConfig
+	Psql  PostgresConfig
+	Grpc  GRPCConfig
+	Redis RedisConfig
+	Kafka KafkaConfig
 }
 
 // New returns a new Config struct
 func NewConfig() *Config {
 	return &Config{
-		grpc: GRPCConfig{
-			port: getEnvInt("APP_GRPC_PORT", 8001),
+		Grpc: GRPCConfig{
+			Port: getEnvInt("APP_GRPC_PORT", 8001),
 		},
-		psql: PostgresConfig{
-			host:     getEnv("APP_POSTGRES_HOST", "127.0.0.1"),
-			port:     getEnvInt("APP_POSTGRES_PORT", 5432),
-			db:       getEnv("APP_POSTGRES_DB", "example"),
-			username: getEnv("APP_POSTGRES_USERNAME", "postgres"),
-			password: getEnv("APP_POSTGRES_PASSWORD", "example"),
+		Psql: PostgresConfig{
+			Host:     getEnv("APP_POSTGRES_HOST", "127.0.0.1"),
+			Port:     getEnvInt("APP_POSTGRES_PORT", 5432),
+			DB:       getEnv("APP_POSTGRES_DB", "example"),
+			Username: getEnv("APP_POSTGRES_USERNAME", "postgres"),
+			Password: getEnv("APP_POSTGRES_PASSWORD", "example"),
 		},
-		redis: RedisConfig{
-			address:  getEnv("APP_REDIS_ADDRESS", "localhost:6379"),
-			password: getEnv("APP_REDIS_PASSWORD", ""),
-			db:       getEnvInt("APP_REDIS_DB", 0),
+		Redis: RedisConfig{
+			Address:  getEnv("APP_REDIS_ADDRESS", "localhost:6379"),
+			Password: getEnv("APP_REDIS_PASSWORD", ""),
+			DB:       getEnvInt("APP_REDIS_DB", 0),
 		},
-		kafka: KafkaConfig{
-			server: getEnv("APP_KAFKA_SERVER", "localhost:9092"),
-			topic:  getEnv("APP_KAFKA_TOPIC", "user_creation"),
+		Kafka: KafkaConfig{
+			Server: getEnv("APP_KAFKA_SERVER", "localhost:9092"),
+			Topic:  getEnv("APP_KAFKA_TOPIC", "user_creation"),
 		},
 	}
 }

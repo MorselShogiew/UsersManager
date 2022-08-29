@@ -1,6 +1,6 @@
 package consts
 
 const (
-	redisUsersKey = "users"
-	kafkaUsersKey = "users"
+	RedisUsersKey = "users"
+	KafkaUsersKey = "users"
 )

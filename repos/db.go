@@ -12,18 +12,18 @@ import (
 )
 
 type DBManager struct {
-	ok bool
+	Ok bool
 	db *sql.DB
 }
 
 func (m *DBManager) Connect(conf *config.PostgresConfig) {
 	var conninfo string = fmt.Sprintf(
 		"host=%s port=%d dbname=%s user=%s password=%s sslmode=disable",
-		conf.host, conf.port, conf.db, conf.username, conf.password)
+		conf.Host, conf.Port, conf.DB, conf.Username, conf.Password)
 
 	var err error
 	defer func() {
-		m.ok = err == nil
+		m.Ok = err == nil
 	}()
 
 	err = retry.Do(
