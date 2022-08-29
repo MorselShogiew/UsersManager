@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"context"
@@ -68,7 +68,6 @@ func getLogs(c lpb.LoggerRepoClient, ctx context.Context) {
 func main() {
 	flag.Parse()
 	time.Sleep(time.Second * 10)
-	// Set up a connection to the server.
 	sConn, err := grpc.Dial(*serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -79,40 +78,36 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	// Test saving used data
 	u := &upb.User{Name: "Ivan", Email: "example@email1"}
 	u = saveUser(c, ctx, u)
 
 	time.Sleep(time.Second)
 	log.Print("--------")
-	// If last request was more than a minute ago,
-	// we will recieve all users include last saved.
+
 	getUsers(c, ctx)
 
 	time.Sleep(time.Second)
 	log.Print("--------")
-	// Test saving used data.
+
 	u2 := &upb.User{Name: "Vasya", Email: "example@email2"}
 	u2 = saveUser(c, ctx, u2)
 
 	time.Sleep(time.Second)
 	log.Print("--------")
-	// Last user was created less then a minute ago,
-	// so we will not recieve it
+
 	getUsers(c, ctx)
 
 	time.Sleep(time.Second)
 	log.Print("--------")
-	// Test deleting used by gotten IDs
+
 	deleteUser(c, ctx, u.Id)
 	deleteUser(c, ctx, u2.Id)
 
-	// Test deleting used by unknown ID
 	deleteUser(c, ctx, 0)
 
 	time.Sleep(time.Second)
 	log.Print("--------")
-	// Set up a connection to the logger.
+
 	lConn, err := grpc.Dial(*loggerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -120,8 +115,7 @@ func main() {
 	defer lConn.Close()
 	l := lpb.NewLoggerRepoClient(lConn)
 	log.Printf("Connected gRPC %s", *loggerAddr)
-	// If last request was more than a minute ago,
-	// we will recieve all users include last saved.
+
 	ctx2, cancel2 := context.WithTimeout(context.Background(), time.Second)
 	defer cancel2()
 	getLogs(l, ctx2)

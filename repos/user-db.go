@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/MorselShogiew/UsersManager/cmd/app"
 	pb "github.com/MorselShogiew/UsersManager/proto/user"
+	"github.com/MorselShogiew/UsersManager/redis"
 )
 
 type UserDBRepo interface {
@@ -17,8 +19,8 @@ type UserDBRepo interface {
 type userDB struct {
 	pb.UnimplementedUserRepoServer
 	db    *DBManager
-	redis *RedisManager
-	p     *KafkaProducer
+	redis *redis.RedisManager
+	p     *app.KafkaProducer
 	ctx   context.Context
 }
 
@@ -84,13 +86,13 @@ func (s *userDB) GetUsers(req *pb.GetUsersRequest, stream pb.UserRepo_GetUsersSe
 	defer rows.Close()
 
 	// Loop through rows, using Scan to assign column data to struct fields.
-	var users []StoredUser
+	var users []redis.StoredUser
 	for rows.Next() {
 		u := &pb.User{}
 		if err := rows.Scan(&u.Id, &u.Email, &u.Name); err != nil {
 			return fmt.Errorf("Failed while scaning row: %s", err)
 		}
-		users = append(users, StoredUser{Id: u.Id, Email: u.Email, Name: u.Name})
+		users = append(users, redis.StoredUser{Id: u.Id, Email: u.Email, Name: u.Name})
 		stream.Send(u)
 	}
 	if err := rows.Err(); err != nil {
@@ -103,7 +105,7 @@ func (s *userDB) GetUsers(req *pb.GetUsersRequest, stream pb.UserRepo_GetUsersSe
 	return nil
 }
 
-func NewUserDB(db *DBManager, redis *RedisManager, p *KafkaProducer) *userServer {
+func NewUserDB(db *DBManager, redis *redis.RedisManager, p *app.KafkaProducer) *userDB {
 	s := &userDB{
 		db:    db,
 		redis: redis,

@@ -6,6 +6,7 @@ import (
 	"net"
 	"sync"
 
+	"github.com/MorselShogiew/UsersManager/config"
 	"github.com/MorselShogiew/UsersManager/packages/color"
 	pb "github.com/MorselShogiew/UsersManager/proto/user"
 	"github.com/MorselShogiew/UsersManager/repos"
@@ -13,10 +14,10 @@ import (
 )
 
 func main() {
-	conf := NewConfig()
+	conf := config.NewConfig()
 	var wg sync.WaitGroup
 
-	db := &DBManager{}
+	db := &repos.DBManager{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()

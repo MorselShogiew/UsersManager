@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/MorselShogiew/UsersManager/config"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
@@ -15,7 +16,7 @@ type KafkaProducer struct {
 	flush int
 }
 
-func (k *KafkaProducer) Connect(conf *KafkaConfig) {
+func (k *KafkaProducer) Connect(conf *config.KafkaConfig) {
 	// log.Printf("create kafka produser with server %s and topic %s", conf.server, conf.topic)
 	var err error
 	defer func() {
